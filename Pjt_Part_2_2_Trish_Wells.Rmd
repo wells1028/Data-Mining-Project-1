@@ -1,0 +1,261 @@
+---
+title: "Pjt_Part_2_2_Trish_Wells"
+author: "Trish Wells"
+date: "2/19/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Execute the Chapter 4 R Zone Code – generate the RMD output. 
+
+```{r, include=FALSE, warning=FALSE}
+#read in the houses data set
+getwd()
+houses <- read.csv("housesuse.csv",
+                   stringsAsFactors = FALSE, header = FALSE)
+names(houses) <- c("MVAL", "MINC", "HAGE", "ROOMS", "BEDRMS", "POPN" ,
+                   "HHLDS", "LAT", "LONG")
+head(houses)
+houses$MINC_Z <- (houses$MINC - mean(houses$MINC))/(sd(houses$MINC))
+houses$HAGE_Z <- (houses$HAGE - mean(houses$HAGE))/(sd(houses$HAGE))
+
+# Do the same for the remaining variables
+houses$MVAL_Z <- (houses$MVAL - mean(houses$MVAL))/(sd(houses$MVAL))
+houses$ROOMS_Z <- (houses$ROOMS - mean(houses$ROOMS))/(sd(houses$ROOMS))
+houses$BEDRMS_Z <- (houses$BEDRMS - mean(houses$BEDRMS))/(sd(houses$BEDRMS))
+houses$POPN_Z <- (houses$POPN - mean(houses$POPN))/(sd(houses$POPN))
+houses$HHLDS_Z <- (houses$HHLDS - mean(houses$HHLDS))/(sd(houses$HHLDS))
+houses$LAT_Z <- (houses$LAT - mean(houses$LAT))/(sd(houses$LAT))
+houses$LONG_Z <- (houses$LONG - mean(houses$LONG))/(sd(houses$LONG))
+
+
+# Randomly select 90% for the Training dataset
+choose <- runif(dim(houses)[1],0, 1)
+test.house <- houses[which(choose < .1),]
+train.house <- houses[which(choose <= .1),]
+
+#REQUIRES LIBRARY PSYCH
+library(psych)
+pca1 <- principal(train.house[,c(10:17)],
+                  nfactors=8,
+                  rotate="none",
+                  scores=TRUE)
+
+#PCA VALUES
+# Eigenvalues:
+pca1$values
+# Loadings matrix,
+# variance explained,
+pca1$loadings
+#SCREE PLOT OF VALUES
+plot(pca1$values,
+     type = "b",
+     main = "Scree Plot for Houses Data")
+#PLOT FACTOR SCORES
+pairs(~train.house$MINC+
+         train.house$HAGE+pca1$scores[,3],
+       labels = c("Median Income",
+                  "Housing Median Age",
+                  "Component 3 Scores"))
+pairs(~train.house$MINC+
+         train.house$HAGE+pca1$scores[,4],
+       labels = c("Median Income",
+                  "Housing Median Age",
+                  "Component 4 Scores"))
+#CALCULATE COMMUNNALITIES
+comm3 <- loadings(pca1)[2,1]^2+
+  loadings(pca1)[2,2]^2 + loadings(pca1)[2,3]^2
+comm4 <- loadings(pca1)[2,1]^2+
+  loadings(pca1)[2,2]^2+ loadings(pca1)[2,3]^2+
+  loadings(pca1)[2,4]^2
+comm3; comm4
+#VALIDATION OF PCA
+pca2 <-
+  principal(test.house[,c(10:17)],
+            nfactors=4,
+            rotate="none",
+            scores=TRUE)
+pca2$loadings
+#CONDUCT FACTOR ANALYSIS USING NEW DATA SET
+adult <- read.csv("adult.txt",
+                  stringsAsFactors = FALSE)
+adult$"capnet"<- adult$capital.gain-adult$capital.loss
+adult.s <- adult[,c(1,3,5,13,16)]
+head(adult.s)
+#standardize the data
+# Standardize the data:
+adult.s$AGE_Z <- (adult.s$age - mean(adult.s$age))/(sd(adult.s$age))
+adult.s$DEM_Z <- (adult.s$demogweight - mean(adult.s$demogweight))/(sd(adult.s$demogweight))
+head(adult.s$education.num)
+adult.s$EDUC_Z <- (adult.s$education.num - mean(adult.s$education.num))/(sd(adult.s$education.num))
+adult.s$CAPNET_Z <- (adult.s$capnet - mean(adult.s$capnet))/(sd(adult.s$capnet))
+adult.s$HOURS_Z <- (adult.s$hours.per.week - mean(adult.s$hours.per.week))/(sd(adult.s$hours.per.week))
+
+# Randomly select a Training dataset
+choose <- runif(dim(adult.s)[1],0, 1)
+test.adult <- adult.s[which(choose < .1), c(6:10)]
+train.adult <- adult.s[which(choose >= .1), c(6:10)]
+
+# bartlett's test for sphericity
+# Requires package psych
+library(psych)
+corrmat1 <- cor(train.adult,
+                method = "pearson")
+cortest.bartlett(corrmat1,
+                 n = dim(train.adult)[1])
+
+#factor analysis with five components
+# Requires psych, GPArotation
+library(GPArotation)
+fa1 <- fa(train.adult, nfactors=2, max.iter = 200,  fm = "pa", rotate="none")
+fa1$values # Eigenvalues
+fa1$loadings # Loadings,
+# proportion of variance,
+# and cumulative variance
+#factor analysis with two components
+fa2 <- fa(train.adult, nfactors=2,
+          fm = "pa", max.iter = 200,
+          rotate="none")
+fa2$values # Eigenvalues
+fa2$loadings # Loadings
+fa2$communality # Communality
+#varimax rotation
+fa2v <- fa(train.adult,
+           nfactors = 2,
+           fm = "pa", max.iter = 200,
+           rotate="varimax")
+fa2v$loadings
+fa2v$communality
+#user defined composites
+small.houses <- houses[,c(4:7)]
+a <- c(1/4, 1/4, 1/4, 1/4)
+W <- t(a)*small.houses
+W
+
+```
+
+
+
+
+```{r }
+## 15. First, filter out all batters with fewer than 100 at bats. Next, standardize all the numerical variables using z-scores.
+
+#Import the baseball table.
+###baseball <- read.table('baseball.txt', header = T, sep='',stringsAsFactors=FALSE)
+baseball <- read.csv("baseball.txt", header = T, sep='',stringsAsFactors=FALSE)
+
+#Use the subset function to filter out any batters with fewer than 100 at bats
+baseball.atbats <- subset(baseball, at_bats >= 100)
+
+#Standarize the numerical variables
+baseball.atbats$age_Z <- (baseball.atbats$age -
+                            mean(baseball.atbats$age))/(sd(baseball.atbats$age))
+baseball.atbats$games_Z <- (baseball.atbats$games -
+                              mean(baseball.atbats$games))/(sd(baseball.atbats$games))
+baseball.atbats$at_bats_Z <- (baseball.atbats$at_bats -
+                                mean(baseball.atbats$at_bats))/(sd(baseball.atbats$at_bats))
+baseball.atbats$runs_Z <- (baseball.atbats$runs -
+                             mean(baseball.atbats$runs))/(sd(baseball.atbats$runs))
+baseball.atbats$hits_Z <- (baseball.atbats$hits -
+                             mean(baseball.atbats$hits))/(sd(baseball.atbats$hits))
+baseball.atbats$doubles_Z <- (baseball.atbats$doubles -
+                                mean(baseball.atbats$doubles))/(sd(baseball.atbats$doubles))
+baseball.atbats$triples_Z <- (baseball.atbats$triples -
+                                mean(baseball.atbats$triples))/(sd(baseball.atbats$triples))
+baseball.atbats$homeruns_Z <- (baseball.atbats$homeruns -
+                                 mean(baseball.atbats$homeruns))/(sd(baseball.atbats$homeruns))
+baseball.atbats$RBIs_Z <- (baseball.atbats$RBIs -
+                             mean(baseball.atbats$RBIs))/(sd(baseball.atbats$RBIs))
+baseball.atbats$walks_Z <- (baseball.atbats$walks -
+                              mean(baseball.atbats$walks))/(sd(baseball.atbats$walks))
+baseball.atbats$strikeouts_Z <- (baseball.atbats$strikeouts -
+                                   mean(baseball.atbats$strikeouts))/(sd(baseball.atbats$strikeouts))
+baseball.atbats$bat_ave_Z <- (baseball.atbats$bat_ave -
+                                mean(baseball.atbats$bat_ave))/(sd(baseball.atbats$bat_ave))
+baseball.atbats$on_base_pct_Z <- (baseball.atbats$on_base_pct -
+                                    mean(baseball.atbats$on_base_pct))/(sd(baseball.atbats$on_base_pct))
+baseball.atbats$slugging_pct_Z <- (baseball.atbats$slugging_pct -
+                                     mean(baseball.atbats$slugging_pct))/(sd(baseball.atbats$slugging_pct))
+baseball.atbats$stolen_bases_Z <- (baseball.atbats$stolen_bases -
+                                     mean(baseball.atbats$stolen_bases))/(sd(baseball.atbats$stolen_bases))
+baseball.atbats$caught_stealing_Z <- (baseball.atbats$caught_stealing -
+                                        mean(baseball.atbats$caught_stealing))/(sd(baseball.atbats$caught_stealing))
+
+
+## 16. Now, suppose we are interested in estimating the number of home runs, based on the other numerical variables in the data set. So all the other numeric variables will be our predictors. Investigate whether sufficient variability exists among the predictors to perform PCA.
+
+#Apply the cor function to each of the standarized variables
+cor(baseball.atbats[,c(20,21,22,23,24,25,26,28,29,30,31,32,33,34,35)])
+
+## 17. How many components should be extracted according to
+## a. The Eigenvalue Criterion
+## b. The Proportion of Variance Explained Criterion?
+## c. The Scree Plot Criterion?
+## d. The Communality Criterion?
+
+#Import the psych library
+#install.packages("psych", repos = "http://cran.us.r-project.org")
+#Apply the principal function to the data
+library(psych)
+baseball.pca <- principal(baseball.atbats[,c(20,21,22,23,24,25,26,28,29,30,31,32,33,34,35)],
+                          nfactors=15,
+                          rotate="none",
+                          scores=TRUE)
+
+#View the Eigenvalues
+baseball.pca$values
+
+## Four
+
+#View the loadings matrix, specifically Cumulative Var
+baseball.pca$loading
+
+# Assuming we are aiming for 95% proportion explained, we would extract seven components.
+
+#Use to the plot function make a scree plot
+plot(baseball.pca$values,
+     type="b",
+     main="Scree Plot of Baseball Data")
+
+#According to the Scree Plot, we should not exceed four components.
+
+#View the component matrix
+baseball.pca
+#Test if age_Z is necessary to keep in the analysis.
+comm3 <- (loadings(baseball.pca)[1,1])^2+(loadings(baseball.pca)[1,2])^2+
+  (loadings(baseball.pca)[1,3])^2
+comm4 <- (loadings(baseball.pca)[1,1])^2+(loadings(baseball.pca)[1,2])^2+
+  (loadings(baseball.pca)[1,3])^2+(loadings(baseball.pca)[1,4])^2
+comm3;comm4
+
+# Communality for four components exceeds 0.50, so we should extract four components.
+
+## 18. Based on the information from the previous exercise, make a decision about how many components you shall extract.
+
+## I will extract four components.
+
+## 19.Apply PCA using varimax rotation, with your chosen number of components. Write up a short profile of the first few components extracted.
+
+baseball.pca.varimax <- principal(baseball.atbats[,c(20,21,22,23,24,25,26,28,29,30,31,32,33,34,35)],
+                                  nfactors=4,
+                                  rotate="varimax",
+                                  scores=TRUE)
+baseball.pca.varimax
+
+#RC1: Longevity. This PC is measuring the positive relationships between games, at_bats, runs, hits, doubles, RBIs, walks, and strikeouts. A person who scores highly in all these variables will have longevity in the game and more experience.
+
+
+#RC3: Slugger. This PC is measuring the positive relationships between bat_ave, on_base_pct, and slugging_pct. A person who scores highly in all these variables get relatively more hits.
+
+
+#RC2: Audacity. This PC measures the positive relationships between triples, stolen_bases, and caught_stealing. A person who scores highly in all these variables is a risk taker.
+
+
+#RC4: Age. This PC takes into account a player’s age.
+
+
+```
+

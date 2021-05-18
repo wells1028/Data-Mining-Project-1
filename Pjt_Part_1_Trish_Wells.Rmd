@@ -1,0 +1,290 @@
+---
+title: "Project One"
+author: "Trish Wells"
+date: "2/17/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(caret)
+```
+
+
+
+```{r, warning=FALSE}
+df <- read_excel("AAERDATAHWPart1 (1).xlsx", skip = 1)
+
+# Remove DATA42 because 89% is missing
+sum(is.na(df$DATA42))
+sum(is.na(df$DATA42))/nrow(df)
+df$DATA42 <- NULL
+
+# Remove observations where DATA12 is NA
+sum(is.na(df$DATA12))
+sum(is.na(df$DATA12))/nrow(df)
+df <- df[which(!is.na(df$DATA12)),]
+
+# Remove DATA180 because 99% is missing
+sum(is.na(df$DATA180))
+sum(is.na(df$DATA180))/nrow(df)
+df$DATA180 <- NULL
+
+# Predict DATA2 based on Cash (DATA1) & Sales (DATA12)
+df$DATA2 <- as.numeric(df$DATA2)
+sum(is.na(df$DATA2))
+sum(is.na(df$DATA2))/nrow(df)
+
+lmdata2<-lm(DATA2 ~ DATA1+
+              DATA12, data = df)
+
+summary(lmdata2)
+# Intercept is -205.6
+# B1 is 2.226
+# B2 is .1962
+
+data2nulls <- which(is.na(df$DATA2))
+
+b1 <- df[data2nulls,10]*2.226
+b2 <- df[data2nulls,21]*0.1962
+
+pred <- b1+b2-205.6
+df[data2nulls,11] <- pred
+head(df$DATA2,100)
+sum(is.na(df$DATA2))
+
+# Replace DATA10 NAs with 0
+nrow(df[which(df$DATA10==0),])
+nrow(df[which(df$DATA10==0),])/nrow(df)
+sum(is.na(df$DATA10))
+sum(is.na(df$DATA10))/nrow(df)
+
+data10nulls <- which(is.na(df$DATA10))
+df[data10nulls,19] <- 0
+sum(is.na(df$DATA10))
+```
+
+
+```{r}
+sum(duplicated(df))
+# No duplicate rows
+
+# Columns with non-numeric values
+str(df[sapply(df, function(df) !is.numeric(df))])
+```
+
+```{r}
+mean <- mean(na.omit(df$DATA29))
+median <- median(na.omit(df$DATA29)) 
+length <- length(na.omit(df$DATA29)) 
+sd <- sd(na.omit(df$DATA29))
+sum <- sum(na.omit(df$DATA29))
+DATA29Summary <- data.frame(mean, median, length, sd, sum)
+DATA29Summary
+
+```
+
+```{r}
+hist(df$DATA12) 
+boxplot(df$DATA12)
+summary(df$DATA12)
+IQR12 <- 546.36-23.7
+lowoutlier12 <- 23.7-1.5*IQR12
+highoutlier12 <- 546.36+1.5*IQR12
+which(df$DATA12<lowoutlier12)
+outlierd12 <- which(df$DATA12>highoutlier12)
+length(outlierd12)
+salesoutlier.df <- df$DATA12[outlierd12]
+summary(salesoutlier.df)
+
+hist(df$`DATA 24`) 
+boxplot(df$`DATA 24`)
+summary(df$`DATA 24`)
+
+IQR24 <- 14.81-0.87
+lowoutlier24 <- 0.87-1.5*IQR24
+highoutlier24 <- 14.81+1.5*IQR24
+which(df$`DATA 24`<lowoutlier24)
+outlierd24 <- which(df$`DATA 24`>highoutlier24)
+length(outlierd24)
+priceoutlier.df <- df$`DATA 24`[outlierd24]
+summary(priceoutlier.df)
+
+hist(df$DATA29) 
+boxplot(df$DATA29)
+summary(df$DATA29)
+
+IQR29 <- 4.271-0.175
+lowoutlier29 <- 0.175-1.5*IQR29
+highoutlier29<- 4.271+1.5*IQR29
+which(df$DATA29<lowoutlier29)
+outlierd29 <- which(df$DATA29>highoutlier29)
+length(outlierd29)
+empoutlier.df <- df$DATA29[outlierd29]
+summary(empoutlier.df)
+
+```
+
+```{r}
+mean(df$DATA12)
+median(df$DATA12)
+(3*(mean(df$DATA12) - median(df$DATA12)))/sd(df$DATA12)
+
+m <- mean(df$DATA12); s <- sd(df$DATA12)
+z.weight <- (df$DATA12 - m)/s
+(3*(mean(z.weight) - median(z.weight)))/sd(z.weight)
+
+```
+
+```{r}
+
+invsqrtemp <- 1 / sqrt(df$DATA29) # Inverse square root
+hist(invsqrtemp)
+
+# Normal Q-Q Plot
+qqnorm(invsqrtemp, datax = TRUE, col = "red", ylim = c(-5, 35), 
+       main = "Normal Q-Q Plot of Inverse Square Root of Employees")
+qqline(invsqrtemp, col = "blue", datax = TRUE)
+
+
+# New Var
+df$DATA1.1 <- df$DATA1/df$DATA6
+invsqrt1.1 <- 1/sqrt(df$DATA1.1)
+qqnorm(invsqrt1.1, datax = TRUE, col = "red", ylim = c(0, 300), 
+       main = "Normal Q-Q Plot of Inverse Square Root of Cash/Total Assets")
+qqline(invsqrt1.1)
+
+```
+
+
+```{r}
+df2 <- read_excel("AAERDATAHWPART2-1.xlsx")
+sum(duplicated(df2))
+# No duplicate rows
+
+# Columns with non-numeric values
+str(df2[sapply(df2, function(df2) !is.numeric(df2))])
+
+
+# Number of NAs in each column
+sapply(df2, 
+       function(x)
+         sum(is.na(x)))
+
+# Missing values in anl_excessret, totval, and cpiind
+summary(df2$anl_excessret)
+summary(df2$totval)
+summary(df2$cpiind)
+
+# summary of all
+sapply(df2, 
+       function(x)
+         summary(x))
+
+# Delete observation with NAs in totval and cpiind
+df2 <- df2[which(!is.na(df2$totval)),]
+
+# Impute median for excess ret.
+anlNA<- which(is.na(df2$anl_excessret))
+df2[anlNA,21] <- median(na.omit(df2$anl_excessret))
+df2[anlNA,21]
+
+
+```
+
+
+```{r}
+# All column names and their type
+split(names(df2),
+      sapply(df2, 
+             function(x)
+               paste(class(x),
+                     collapse =" ")))
+
+#Normalize
+norm <- preProcess(df2[,c(13:93)], method=c("center", "scale"))
+normvals <- predict(norm, df2[,c(13:93)])
+normdf <- data.frame(df2[,1:12],normvals)
+
+#Hists
+hist(df2$anl_excessret, col=rgb(1,0,0,0.5),xlim=c(-1.5,3.5), ylim=c(0,600), main="Excess Return vs BK")
+hist(df2$bktype, col=rgb(0,0,1,0.5), add=T)
+box()
+
+hist(df2$`CA/TA`, col=rgb(1,0,0,0.5),xlim=c(-.1,1.1), ylim=c(0,600), main="CA/TA vs BK")
+hist(df2$bktype, col=rgb(0,0,1,0.5), add=T)
+box()
+
+hist(df2$DATA58...58, col=rgb(1,0,0,0.5),xlim=c(-2.2,2.2), ylim=c(0,600), main="Common Share EPS vs BK")
+hist(df2$bktype, col=rgb(0,0,1,0.5), add=T)
+box()
+
+
+```
+
+
+```{r}
+## simple heatmap of correlations (without values)
+corrdf <- df2[,13:46]
+heatmap(cor(corrdf))
+
+corrcalcdf <- df2[,47:93]
+heatmap(cor(corrcalcdf))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

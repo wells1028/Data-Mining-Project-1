@@ -1,0 +1,608 @@
+---
+title: "Project_Part_Two"
+author: "Trish Wells"
+date: "2/19/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+setwd("C:/Users/wells/Desktop/TBANLT 560/Project 1/Part 2")
+```
+
+## Execute Chapter 3 R Zone Code.
+
+```{r include=FALSE}
+#read in churn data
+churn <- read.csv(file = "churn-1.txt",
+                  stringsAsFactors=TRUE)
+# Show the first ten records
+churn[1:10,]
+# Summarize the Churn variable
+sum.churn <- summary(churn$Churn)
+sum.churn
+
+# Calculate proportion of churners
+prop.churn <- sum(churn$Churn ==
+                    "True") / length(churn$Churn)
+prop.churn
+# Bar chart of variable Churn
+plot.new()
+barplot(sum.churn,
+        ylim = c(0, 3000),
+        main = "Bar Graph of Churners and
+Non-Churners",
+        col = "lightblue")
+box(which = "plot",
+    lty = "solid",
+    col="black")
+
+# Make a table for counts of Churn and International Plan
+counts <- table(churn$Churn,churn$Intl.Plan,
+                dnn=c("Churn", "International Plan"))
+counts
+
+#Overlayed bar chart
+barplot(counts,
+        legend = rownames(counts),
+        col = c("blue", "red"),
+        ylim = c(0, 3300),
+        ylab = "Count",
+        xlab = "International Plan",
+        main = "Comparison Bar Chart:
+Churn Proportions by
+International Plan")
+box(which = "plot",
+    lty = "solid",
+    col="black")
+
+# Create a table with sums for both variables
+sumtable <- addmargins(counts,
+                       FUN = sum)
+
+sumtable
+
+# Create a table of proportions over rows
+row.margin <- round(prop.table(counts,
+                               margin = 1),
+                    4)*100
+row.margin
+
+# Create a table of proportions over columns
+col.margin <- round(prop.table(counts,
+                               margin = 2),
+                    4)*100
+col.margin
+
+# Clustered Bar Chart, with legend
+barplot(counts,
+        col = c("blue", "red"),
+        ylim = c(0, 3300),
+        ylab = "Count",
+        xlab = "International Plan",
+        main = "Churn Count by
+International Plan",
+        beside = TRUE)
+legend("topright",
+       c(rownames(counts)),
+       col = c("blue", "red"),
+       pch = 15,
+       title = "Churn")
+box(which = "plot",
+    lty = "solid",
+    col="black")
+
+# Clustered Bar Chart of Churn and International Plan with legend
+barplot(t(counts),
+        col = c("blue", "green"),
+        ylim = c(0, 3300),
+        ylab = "Counts",
+        xlab = "Churn",
+        main = "International Plan Count by
+Churn",
+        beside = TRUE)
+legend("topright",
+       c(rownames(counts)),
+       col = c("blue", "green"),
+       pch = 15,
+       title = "Int'l Plan")
+box(which = "plot",
+    lty = "solid",
+    col="black")
+
+# Histogram of non-overlayed Customer Service Calls
+hist(churn$CustServ.Calls,
+     xlim = c(0,10),
+     col = "lightblue",
+     ylab = "Count",
+     xlab = "Customer Service Calls",
+     main = "Histogram of Customer Service
+Calls")
+```
+
+```{r}
+# Download and install the R Package ggplot2
+#install.packages("ggplot2")
+# Pick any CRAN mirror
+# (see example image)
+# Open the new package
+library(ggplot2)
+# Overlayed bar charts
+ggplot() +
+  geom_bar(data = churn,
+           aes(x = factor(churn$CustServ.Calls),
+               fill = factor(churn$Churn)),
+           position = "stack") +
+  scale_x_discrete("Customer Service
+Calls") +
+  scale_y_continuous("Percent") +
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue",
+                             "red"))
+ggplot() +
+  geom_bar(data=churn,
+           aes(x = factor(churn$CustServ.Calls),
+               fill = factor(churn$Churn)),
+           position = "fill") +
+  scale_x_discrete("Customer Service Calls")+
+  scale_y_continuous("Percent") +
+  guides(fill=guide_legend(title="Churn")) +
+  scale_fill_manual(values=c("blue", "red"))
+```
+
+```{r}
+# Two-sample T-Test for Int'l Calls
+# Partition data
+churn.false <- subset(churn,
+                      churn$Churn ==
+                        "False")
+churn.true <- subset(churn,
+                     churn$Churn ==
+                       "True")
+# Run the test
+t.test(churn.false$Intl.Calls,
+       churn.true$Intl.Calls)
+
+# Scatterplot of Evening Minutes and Day Minutes, colored by Churn
+plot(churn$Eve.Mins,
+     churn$Day.Mins,
+     xlim = c(0, 400),
+     ylim = c(0, 400),
+     xlab = "Evening Minutes",
+     ylab = "Day Minutes",
+     main = "Scatterplot of Day
+and Evening Minutes by
+Churn",
+     col = ifelse(churn$Churn==
+                    "True",
+                  "red",
+                  "blue"))
+legend("topright",
+       c("True",
+         "False"),
+       col = c("red",
+               "blue"),
+       pch = 1,
+       title = "Churn")
+
+# Scatterplot of Day Minutes and Customer Service Calls, colored by Churn
+plot(churn$Day.Mins,
+     churn$CustServ.Calls,
+     xlim = c(0, 400),
+     xlab = "Day Minutes",
+     ylab = "Customer Service Calls",
+     main = "Scatterplot of Day Minutes and
+Customer Service Calls by Churn",
+     col = ifelse(churn$Churn=="True",
+                  "red",
+                  "blue"),
+     pch = ifelse(churn$Churn=="True",
+                  16, 20))
+legend("topright",
+       c("True",
+         "False"),
+       col = c("red",
+               "blue"),
+       pch = c(16, 20),
+       title = "Churn")
+# Scatterplot matrix
+pairs(~churn$Day.Mins +
+         churn$Day.Calls +
+         churn$Day.Charge)
+# Regression of Day Charge vs Day Minutes
+fit <- lm(churn$Day.Charge ~
+          churn$Day.Mins)
+names(churn)
+summary(fit)
+
+# Correlation values, with p-values
+days <- cbind(churn$Day.Mins,
+              churn$Day.Calls,
+              churn$Day.Charge)
+MinsCallsTest <- cor.test(churn$Day.Mins,
+                          churn$Day.Calls)
+MinsChargeTest <- cor.test(churn$Day.Mins,
+                           churn$Day.Charge)
+CallsChargeTest <- cor.test(churn$Day.Calls,
+                            churn$Day.Charge)
+round(cor(days),
+      4)
+MinsCallsTest$p.value
+MinsChargeTest$p.value
+CallsChargeTest$p.value
+
+# Correlation values and p-values in matrix form
+# Collect variables of interest
+corrdata <-
+  cbind(churn$Account.Length,
+        churn$VMail.Message,
+        churn$Day.Mins,
+        churn$Day.Calls,
+        churn$CustServ.Calls)
+
+# Declare the matrix
+corrpvalues <- matrix(rep(0, 25),
+                      ncol = 5)
+
+# Fill the matrix with correlations
+for (i in 1:4) {
+  for (j in (i+1):5) {
+    corrpvalues[i,j] <-
+      corrpvalues[j,i] <-
+      round(cor.test(corrdata[,i],
+                     corrdata[,j])$p.value,
+            4)
+  }
+}
+round(cor(corrdata), 4)
+corrpvalues
+```
+
+
+
+
+```{r }
+## 21 Using the churn data set, develop EDA which shows that the remaining numeric variables in the data set (apart from those covered in the text above) indicate no obvious association with the target variable.
+
+churn1 <- read.csv("churn-1.txt", header = T, sep=',')
+names(churn1) <- c("State","Account.Length","Area.Code","Phone","Intl.Plan.","VMail.Plan","VMail.Message","Day.Mins" ,"Day.Calls" ,"Day.Charge","Eve.Mins" ,"Eve.Calls","Eve.Charge","Night.Mins","Night.Calls" ,"Night.Charge","Intl.Mins" ,"Intl.Calls","Intl.Charge","CustServ.Calls" ,"Churn.")
+
+
+ggplot(data = churn1, aes(x=churn1$Account.Length,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("Account Length")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#VMail Message
+ggplot(data = churn1, aes(x=churn1$VMail.Message,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("VMail Message")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Day Calls
+ggplot(data = churn1, aes(x=churn1$Day.Calls,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("Day Calls")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Eve Calls
+ggplot(data = churn1, aes(x=churn1$Eve.Calls,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("Eve Calls")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Night Mins
+ggplot(data = churn1, aes(x=churn1$Night.Mins,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("Night Mins")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Night Calls
+ggplot(data = churn1, aes(x=churn1$Night.Calls,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("Night Calls")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Intl Mins
+ggplot(data = churn1, aes(x=churn1$Intl.Mins,fill=factor(churn1$Churn.)))+
+  geom_histogram()+
+  scale_x_continuous("Intl Mins")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+```
+
+```{r}
+## Use the adult data set from the book series web site for the following exercises. The target variable is income, and the goal is to classify income based on the other variables.
+
+## 22 Which variables are categorical and which are continuous?
+
+#Import the adult data file.
+adult <- read.table('Clem3Training', header = T, sep=',')
+
+#Apply the split function and sapply in order to group the variables into different types.
+
+#Factor indicates categorical variables and integer indicates continuous variables.
+split(names(adult),sapply(adult, function(x) paste(class(x), collapse=" ")))
+
+## 23 Using software, construct a table of the first 10 records of the data set, in order to get a feel for the data.
+
+
+#View the first 10 records of the adult file.
+View(adult[1:10,])
+
+
+## 24 Investigate whether we have any correlated variables.
+
+#Create a table of all the numeric variables.
+corrdata <- cbind(adult$age,adult$demogweight,adult$education.num,
+                  adult$capital.gain,adult$capital.loss,adult$hours.per.week)
+
+#Apply the cor function to the continuous variable only subset of the adult file
+round(cor(corrdata),4)
+``` 
+
+
+There does not appear to be strong correlation between our variables. The strongest correlation was 0.1459 between hours.per.week and education.num.
+
+
+```{r}
+## 25 For each of the categorical variables, construct a bar chart of the variable, with an overlay of the target variable. Normalize if necessary.
+
+
+#Install the ggplot2 package. Create a bar chart for all 8 categorical variables.
+
+#Workclass
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$workclass),fill=factor(adult$income)),
+           position = "stack")+
+  scale_x_discrete("Workclass")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("blue","red"))
+
+
+ggplot() +
+  geom_bar(data=adult,
+           aes(x=factor(adult$workclass),fill=factor(adult$income)),
+           position = "fill") +
+  scale_x_discrete("workclass") +
+  scale_y_continuous("Count") +
+  guides(fill=guide_legend(title="Churn")) +
+  scale_fill_manual(values=c("blue", "red"))
+
+## 25. For each of the categorical variables, construct a bar chart of the variable, with an overlay of the target variable. Normalize if necessary.
+
+#Education
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$education),fill=factor(adult$income)),
+           position = "stack")+
+  scale_x_discrete("Education")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Marital Status
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$marital.status),fill=factor(adult$income)),
+           position = "stack")+
+  scale_x_discrete("Marital Status")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Occupation
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$occupation),fill=factor(adult$income)),
+           position = "stack")+
+  theme(axis.text.x = element_text(angle=60, hjust=1))+
+  scale_x_discrete("Occupation")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Relationship
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$relationship),fill=factor(adult$income)),
+           position = "stack")+
+  scale_x_discrete("Relationship")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Race
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$race),fill=factor(adult$income)),
+           position = "stack")+
+  scale_x_discrete("Race")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+#Sex
+ggplot()+
+  geom_bar(data = adult, aes(x=factor(adult$sex),fill=factor(adult$income)),
+           position = "stack")+
+  scale_x_discrete("Sex")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+```
+
+Education: As education increases, the proportion of income >$50K increases. This makes sense as those with higher education are more likely to have higher paying jobs.
+Marital Status: There is a significantly higher proportion of Married-Civ-Spouse people making >$50K compared to divorced, never married, widowed, etc.
+
+Occupation: As expected, highly specialized and executive occupations are more likely to make more than $50K. Two examples of these occupations are Exec-managerial and Prof-specialty.
+
+Relationship: The proportion of income is similar between Husband and Wife, though there are significantly more husband observations. The proportions of observations >$50K in the other categories are much lower.
+
+Race: It appears White observations have a higher proportion of income >$50k compared to the other races. There are also significantly more White observations in general.
+
+Sex: Males have a higher proportion of income >$50K, ~30%, compared to ~15% for Females.
+
+I would expect Sex, Education, Occupation, and Race to be significant in data mining classification models.
+
+
+```{r}
+#Native Country
+#Create a flag variable for any other countries than the United States.
+us.flag <- ifelse(adult$native.country=="United-States","United-States","Non-US")
+income.usflag <- data.frame(adult$income,us.flag)
+ggplot()+
+  geom_bar(data = income.usflag,
+           aes(x=factor(income.usflag$us.flag),fill=factor(income.usflag$adult.income)),
+           position = "stack")+
+  scale_x_discrete("Native Country")+
+  scale_y_continuous("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+
+##26. For each pair of categorical variables, construct a cross tabulation. Discuss your salient results.
+
+#Create cross tabulation using the table function for each pair of variales.
+table(adult$workclass,adult$education)
+table(adult$workclass,adult$marital.status)
+table(adult$workclass,adult$occupation)
+table(adult$workclass,adult$relationship)
+table(adult$workclass,adult$race)
+table(adult$workclass,adult$sex)
+table(adult$workclass,adult$native.country)
+table(adult$workclass,adult$income)
+table(adult$education,adult$marital.status)
+table(adult$education,adult$occupation)
+table(adult$education,adult$relationship)
+table(adult$education,adult$race)
+table(adult$education,adult$sex)
+table(adult$education,adult$native.country)
+table(adult$education,adult$income)
+table(adult$marital.status,adult$occupation)
+table(adult$marital.status,adult$relationship)
+table(adult$marital.status,adult$race)
+table(adult$marital.status,adult$sex)
+table(adult$marital.status,adult$native.country)
+table(adult$marital.status,adult$income)
+table(adult$occupation,adult$relationship)
+table(adult$occupation,adult$race)
+table(adult$occupation,adult$sex)
+table(adult$occupation,adult$native.country)
+table(adult$occupation,adult$income)
+table(adult$relationship,adult$race)
+table(adult$relationship,adult$sex)
+table(adult$relationship,adult$native.country)
+table(adult$relationship,adult$income)
+table(adult$race,adult$sex)
+table(adult$race,adult$native.country)
+table(adult$race,adult$income)
+table(adult$sex,adult$native.country)
+table(adult$sex,adult$income)
+table(adult$native.country,adult$income)
+```
+
+
+It appears several categories are oversampled, such as Male (Sex), Husband (Relationship), White (Race), and US (Native Country). The cross tabulation is useful for comparing variables to each other and seeing how they interact. For example, comparing Sex and Occupation, we can clearly see male-dominated fields (Craft-repair) and female-dominated fields (adm-clerical). Another example is comparing Race and Marital Status. While the White category is oversampled, we can still see stark differences in marital status by using proportions. 
+
+
+
+```{r}
+##28. Report on whether anomalous fields exist in this data set, based on your EDA, which fields these are, and what we should do about it.
+```
+
+
+Workclass and occupation contain several “?” observations. This missing data should be deleted or classified into another category within these variables, such as “Other”.
+
+
+```{r}
+##29. Report the mean, median, minimum, maximum, and standard deviation for each of the numerical variables.
+
+library(psych)
+adultsummary <- describe(adult)
+
+##30. Construct a histogram of each numerical variables, with an overlay of the target variable income. Normalize if necessary.
+
+#Apply ggplot and geom_histogram to each of the numerical variables with an overlay of income.
+#Age
+ggplot(data = adult, aes(x=adult$age,fill=factor(adult$income)))+
+  geom_histogram()+
+  scale_x_continuous("Age")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Demogweight
+ggplot(data = adult, aes(x=adult$demogweight,fill=factor(adult$income)))+
+  geom_histogram()+
+  scale_x_continuous("Demogweight")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Education.num
+ggplot(data = adult, aes(x=adult$education.num,fill=factor(adult$income)))+
+  geom_histogram()+
+  scale_x_continuous("Education Number")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Capital.gain
+ggplot(data = adult, aes(x=adult$capital.gain,fill=factor(adult$income)))+
+  geom_histogram()+
+  scale_x_continuous("Capital Gain")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Capital.loss
+ggplot(data = adult, aes(x=adult$capital.loss,fill=factor(adult$income)))+
+  geom_histogram()+
+  scale_x_continuous("Capital Loss")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+
+#Hours.per.week
+ggplot(data = adult, aes(x=adult$hours.per.week,fill=factor(adult$income)))+
+  geom_histogram()+
+  scale_x_continuous("Hours Per Week")+
+  scale_y_discrete("Count")+
+  guides(fill=guide_legend(title="Income"))+
+  scale_fill_manual(values=c("blue","red"))
+```
+
+Age: Younger people are much less likely to make >$50K. As age increases, the proportion of people making >$50K increases to ~30%.
+
+Demogweight: The proportion of >$50K to demogweight is relatively stable as demogweight increases.
+
+Education Number: As education increase, the proportion of >$50k also increases.
+
+Capital Gain: The majority of Capital Gain observations are zero. Of these, about a quarter are associated with >$50K. As Capital Gains increases, it is more likely to be associated with income >$50K.
+
+Capital Loss: The majority of Capital Loss observations are zero. Of these, about a quarter are associated with >$50K. As Capital Loss increase, there does not appear to be a relationship with income.
+
+Hours Per Week: As hours per week increases, the proportion of income >$50K also increases.
+
+I would expect Age, Education, and Hours Per Week to be significant in any classification model.
+
+```{r}
+
+###31. For each pair of numerical variables construct a scatter plot of the variables. Discuss your salient results.
+
+#Use the function pairs to create a scatterplot matrix.
+pairs(~ adult$age+adult$demogweight+adult$education.num+adult$capital.gain+adult$capital.loss+adult$hours.per.week)
+head(adult)
+names(adult)
+
+```
